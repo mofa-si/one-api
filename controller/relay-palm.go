@@ -59,7 +59,7 @@ func requestOpenAI2PaLM(textRequest GeneralOpenAIRequest) *PaLMChatRequest {
 	}
 	for _, message := range textRequest.Messages {
 		palmMessage := PaLMChatMessage{
-			Content: message.Content,
+			Content: message.StringContent(),
 		}
 		if message.Role == "user" {
 			palmMessage.Author = "0"
@@ -187,6 +187,7 @@ func palmHandler(c *gin.Context, resp *http.Response, promptTokens int, model st
 		}, nil
 	}
 	fullTextResponse := responsePaLM2OpenAI(&palmResponse)
+	fullTextResponse.Model = model
 	completionTokens := countTokenText(palmResponse.Candidates[0].Content, model)
 	usage := Usage{
 		PromptTokens:     promptTokens,

@@ -114,7 +114,7 @@ func requestOpenAI2Zhipu(request GeneralOpenAIRequest) *ZhipuRequest {
 		if message.Role == "system" {
 			messages = append(messages, ZhipuMessage{
 				Role:    "system",
-				Content: message.Content,
+				Content: message.StringContent(),
 			})
 			messages = append(messages, ZhipuMessage{
 				Role:    "user",
@@ -123,7 +123,7 @@ func requestOpenAI2Zhipu(request GeneralOpenAIRequest) *ZhipuRequest {
 		} else {
 			messages = append(messages, ZhipuMessage{
 				Role:    message.Role,
-				Content: message.Content,
+				Content: message.StringContent(),
 			})
 		}
 	}
@@ -290,6 +290,7 @@ func zhipuHandler(c *gin.Context, resp *http.Response) (*OpenAIErrorWithStatusCo
 		}, nil
 	}
 	fullTextResponse := responseZhipu2OpenAI(&zhipuResponse)
+	fullTextResponse.Model = "chatglm"
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return errorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil

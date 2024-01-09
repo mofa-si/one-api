@@ -12,8 +12,104 @@ import (
 
 type Message struct {
 	Role    string  `json:"role"`
-	Content string  `json:"content"`
+	Content any     `json:"content"`
 	Name    *string `json:"name,omitempty"`
+}
+
+type ImageURL struct {
+	Url    string `json:"url,omitempty"`
+	Detail string `json:"detail,omitempty"`
+}
+
+type TextContent struct {
+	Type string `json:"type,omitempty"`
+	Text string `json:"text,omitempty"`
+}
+
+type ImageContent struct {
+	Type     string    `json:"type,omitempty"`
+	ImageURL *ImageURL `json:"image_url,omitempty"`
+}
+
+const (
+	ContentTypeText     = "text"
+	ContentTypeImageURL = "image_url"
+)
+
+type OpenAIMessageContent struct {
+	Type     string    `json:"type,omitempty"`
+	Text     string    `json:"text"`
+	ImageURL *ImageURL `json:"image_url,omitempty"`
+}
+
+func (m Message) IsStringContent() bool {
+	_, ok := m.Content.(string)
+	return ok
+}
+
+func (m Message) StringContent() string {
+	content, ok := m.Content.(string)
+	if ok {
+		return content
+	}
+	contentList, ok := m.Content.([]any)
+	if ok {
+		var contentStr string
+		for _, contentItem := range contentList {
+			contentMap, ok := contentItem.(map[string]any)
+			if !ok {
+				continue
+			}
+			if contentMap["type"] == ContentTypeText {
+				if subStr, ok := contentMap["text"].(string); ok {
+					contentStr += subStr
+				}
+			}
+		}
+		return contentStr
+	}
+	return ""
+}
+
+func (m Message) ParseContent() []OpenAIMessageContent {
+	var contentList []OpenAIMessageContent
+	content, ok := m.Content.(string)
+	if ok {
+		contentList = append(contentList, OpenAIMessageContent{
+			Type: ContentTypeText,
+			Text: content,
+		})
+		return contentList
+	}
+	anyList, ok := m.Content.([]any)
+	if ok {
+		for _, contentItem := range anyList {
+			contentMap, ok := contentItem.(map[string]any)
+			if !ok {
+				continue
+			}
+			switch contentMap["type"] {
+			case ContentTypeText:
+				if subStr, ok := contentMap["text"].(string); ok {
+					contentList = append(contentList, OpenAIMessageContent{
+						Type: ContentTypeText,
+						Text: subStr,
+					})
+				}
+			case ContentTypeImageURL:
+				if subObj, ok := contentMap["image_url"].(map[string]any); ok {
+					contentList = append(contentList, OpenAIMessageContent{
+						Type: ContentTypeImageURL,
+						ImageURL: &ImageURL{
+							Url: subObj["url"].(string),
+						},
+					})
+				}
+			}
+		}
+		return contentList
+	}
+	return nil
 }
 
 const (
@@ -24,24 +120,37 @@ const (
 	RelayModeModerations
 	RelayModeImagesGenerations
 	RelayModeEdits
-	RelayModeAudio
+	RelayModeAudioSpeech
+	RelayModeAudioTranscription
+	RelayModeAudioTranslation
 )
 
 // https://platform.openai.com/docs/api-reference/chat
 
+type ResponseFormat struct {
+	Type string `json:"type,omitempty"`
+}
+
 type GeneralOpenAIRequest struct {
-	Model       string    `json:"model,omitempty"`
-	Messages    []Message `json:"messages,omitempty"`
-	Prompt      any       `json:"prompt,omitempty"`
-	Stream      bool      `json:"stream,omitempty"`
-	MaxTokens   int       `json:"max_tokens,omitempty"`
-	Temperature float64   `json:"temperature,omitempty"`
-	TopP        float64   `json:"top_p,omitempty"`
-	N           int       `json:"n,omitempty"`
-	Input       any       `json:"input,omitempty"`
-	Instruction string    `json:"instruction,omitempty"`
-	Size        string    `json:"size,omitempty"`
-	Functions   any       `json:"functions,omitempty"`
+	Model            string          `json:"model,omitempty"`
+	Messages         []Message       `json:"messages,omitempty"`
+	Prompt           any             `json:"prompt,omitempty"`
+	Stream           bool            `json:"stream,omitempty"`
+	MaxTokens        int             `json:"max_tokens,omitempty"`
+	Temperature      float64         `json:"temperature,omitempty"`
+	TopP             float64         `json:"top_p,omitempty"`
+	N                int             `json:"n,omitempty"`
+	Input            any             `json:"input,omitempty"`
+	Instruction      string          `json:"instruction,omitempty"`
+	Size             string          `json:"size,omitempty"`
+	Functions        any             `json:"functions,omitempty"`
+	FrequencyPenalty float64         `json:"frequency_penalty,omitempty"`
+	PresencePenalty  float64         `json:"presence_penalty,omitempty"`
+	ResponseFormat   *ResponseFormat `json:"response_format,omitempty"`
+	Seed             float64         `json:"seed,omitempty"`
+	Tools            any             `json:"tools,omitempty"`
+	ToolChoice       any             `json:"tool_choice,omitempty"`
+	User             string          `json:"user,omitempty"`
 }
 
 func (r GeneralOpenAIRequest) ParseInput() []string {
@@ -77,14 +186,49 @@ type TextRequest struct {
 	//Stream   bool      `json:"stream"`
 }
 
+// ImageRequest docs: https://platform.openai.com/docs/api-reference/images/create
 type ImageRequest struct {
-	Prompt string `json:"prompt"`
-	N      int    `json:"n"`
-	Size   string `json:"size"`
+	Model          string `json:"model"`
+	Prompt         string `json:"prompt" binding:"required"`
+	N              int    `json:"n,omitempty"`
+	Size           string `json:"size,omitempty"`
+	Quality        string `json:"quality,omitempty"`
+	ResponseFormat string `json:"response_format,omitempty"`
+	Style          string `json:"style,omitempty"`
+	User           string `json:"user,omitempty"`
 }
 
-type AudioResponse struct {
+type WhisperJSONResponse struct {
 	Text string `json:"text,omitempty"`
+}
+
+type WhisperVerboseJSONResponse struct {
+	Task     string    `json:"task,omitempty"`
+	Language string    `json:"language,omitempty"`
+	Duration float64   `json:"duration,omitempty"`
+	Text     string    `json:"text,omitempty"`
+	Segments []Segment `json:"segments,omitempty"`
+}
+
+type Segment struct {
+	Id               int     `json:"id"`
+	Seek             int     `json:"seek"`
+	Start            float64 `json:"start"`
+	End              float64 `json:"end"`
+	Text             string  `json:"text"`
+	Tokens           []int   `json:"tokens"`
+	Temperature      float64 `json:"temperature"`
+	AvgLogprob       float64 `json:"avg_logprob"`
+	CompressionRatio float64 `json:"compression_ratio"`
+	NoSpeechProb     float64 `json:"no_speech_prob"`
+}
+
+type TextToSpeechRequest struct {
+	Model          string  `json:"model" binding:"required"`
+	Input          string  `json:"input" binding:"required"`
+	Voice          string  `json:"voice" binding:"required"`
+	Speed          float64 `json:"speed"`
+	ResponseFormat string  `json:"response_format"`
 }
 
 type Usage struct {
@@ -119,6 +263,7 @@ type OpenAITextResponseChoice struct {
 
 type OpenAITextResponse struct {
 	Id      string                     `json:"id"`
+	Model   string                     `json:"model,omitempty"`
 	Object  string                     `json:"object"`
 	Created int64                      `json:"created"`
 	Choices []OpenAITextResponseChoice `json:"choices"`
@@ -149,7 +294,7 @@ type ChatCompletionsStreamResponseChoice struct {
 	Delta struct {
 		Content string `json:"content"`
 	} `json:"delta"`
-	FinishReason *string `json:"finish_reason"`
+	FinishReason *string `json:"finish_reason,omitempty"`
 }
 
 type ChatCompletionsStreamResponse struct {
@@ -183,14 +328,22 @@ func Relay(c *gin.Context) {
 		relayMode = RelayModeImagesGenerations
 	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/edits") {
 		relayMode = RelayModeEdits
-	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio") {
-		relayMode = RelayModeAudio
+	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio/speech") {
+		relayMode = RelayModeAudioSpeech
+	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio/transcriptions") {
+		relayMode = RelayModeAudioTranscription
+	} else if strings.HasPrefix(c.Request.URL.Path, "/v1/audio/translations") {
+		relayMode = RelayModeAudioTranslation
 	}
 	var err *OpenAIErrorWithStatusCode
 	switch relayMode {
 	case RelayModeImagesGenerations:
 		err = relayImageHelper(c, relayMode)
-	case RelayModeAudio:
+	case RelayModeAudioSpeech:
+		fallthrough
+	case RelayModeAudioTranslation:
+		fallthrough
+	case RelayModeAudioTranscription:
 		err = relayAudioHelper(c, relayMode)
 	default:
 		err = relayTextHelper(c, relayMode)

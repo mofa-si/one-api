@@ -81,7 +81,7 @@ func requestOpenAI2Xunfei(request GeneralOpenAIRequest, xunfeiAppId string, doma
 		if message.Role == "system" {
 			messages = append(messages, XunfeiMessage{
 				Role:    "user",
-				Content: message.Content,
+				Content: message.StringContent(),
 			})
 			messages = append(messages, XunfeiMessage{
 				Role:    "assistant",
@@ -90,7 +90,7 @@ func requestOpenAI2Xunfei(request GeneralOpenAIRequest, xunfeiAppId string, doma
 		} else {
 			messages = append(messages, XunfeiMessage{
 				Role:    message.Role,
-				Content: message.Content,
+				Content: message.StringContent(),
 			})
 		}
 	}
@@ -230,7 +230,13 @@ func xunfeiHandler(c *gin.Context, textRequest GeneralOpenAIRequest, appId strin
 		case stop = <-stopChan:
 		}
 	}
-
+	if len(xunfeiResponse.Payload.Choices.Text) == 0 {
+		xunfeiResponse.Payload.Choices.Text = []XunfeiChatResponseTextItem{
+			{
+				Content: "",
+			},
+		}
+	}
 	xunfeiResponse.Payload.Choices.Text[0].Content = content
 
 	response := responseXunfei2OpenAI(&xunfeiResponse)

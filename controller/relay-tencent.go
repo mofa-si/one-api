@@ -84,7 +84,7 @@ func requestOpenAI2Tencent(request GeneralOpenAIRequest) *TencentChatRequest {
 		if message.Role == "system" {
 			messages = append(messages, TencentMessage{
 				Role:    "user",
-				Content: message.Content,
+				Content: message.StringContent(),
 			})
 			messages = append(messages, TencentMessage{
 				Role:    "assistant",
@@ -93,7 +93,7 @@ func requestOpenAI2Tencent(request GeneralOpenAIRequest) *TencentChatRequest {
 			continue
 		}
 		messages = append(messages, TencentMessage{
-			Content: message.Content,
+			Content: message.StringContent(),
 			Role:    message.Role,
 		})
 	}
@@ -237,6 +237,7 @@ func tencentHandler(c *gin.Context, resp *http.Response) (*OpenAIErrorWithStatus
 		}, nil
 	}
 	fullTextResponse := responseTencent2OpenAI(&TencentResponse)
+	fullTextResponse.Model = "hunyuan"
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return errorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil

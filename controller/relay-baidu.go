@@ -89,7 +89,7 @@ func requestOpenAI2Baidu(request GeneralOpenAIRequest) *BaiduChatRequest {
 		if message.Role == "system" {
 			messages = append(messages, BaiduMessage{
 				Role:    "user",
-				Content: message.Content,
+				Content: message.StringContent(),
 			})
 			messages = append(messages, BaiduMessage{
 				Role:    "assistant",
@@ -98,7 +98,7 @@ func requestOpenAI2Baidu(request GeneralOpenAIRequest) *BaiduChatRequest {
 		} else {
 			messages = append(messages, BaiduMessage{
 				Role:    message.Role,
-				Content: message.Content,
+				Content: message.StringContent(),
 			})
 		}
 	}
@@ -255,6 +255,7 @@ func baiduHandler(c *gin.Context, resp *http.Response) (*OpenAIErrorWithStatusCo
 		}, nil
 	}
 	fullTextResponse := responseBaidu2OpenAI(&baiduResponse)
+	fullTextResponse.Model = "ernie-bot"
 	jsonResponse, err := json.Marshal(fullTextResponse)
 	if err != nil {
 		return errorWrapper(err, "marshal_response_body_failed", http.StatusInternalServerError), nil
