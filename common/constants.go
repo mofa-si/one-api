@@ -38,31 +38,37 @@ const (
 )
 
 const (
-	ChannelTypeUnknown        = 0
-	ChannelTypeOpenAI         = 1
-	ChannelTypeAPI2D          = 2
-	ChannelTypeAzure          = 3
-	ChannelTypeCloseAI        = 4
-	ChannelTypeOpenAISB       = 5
-	ChannelTypeOpenAIMax      = 6
-	ChannelTypeOhMyGPT        = 7
-	ChannelTypeCustom         = 8
-	ChannelTypeAILS           = 9
-	ChannelTypeAIProxy        = 10
-	ChannelTypePaLM           = 11
-	ChannelTypeAPI2GPT        = 12
-	ChannelTypeAIGC2D         = 13
-	ChannelTypeAnthropic      = 14
-	ChannelTypeBaidu          = 15
-	ChannelTypeZhipu          = 16
-	ChannelTypeAli            = 17
-	ChannelTypeXunfei         = 18
-	ChannelType360            = 19
-	ChannelTypeOpenRouter     = 20
-	ChannelTypeAIProxyLibrary = 21
-	ChannelTypeFastGPT        = 22
-	ChannelTypeTencent        = 23
-	ChannelTypeGemini         = 24
+	ChannelTypeUnknown = iota
+	ChannelTypeOpenAI
+	ChannelTypeAPI2D
+	ChannelTypeAzure
+	ChannelTypeCloseAI
+	ChannelTypeOpenAISB
+	ChannelTypeOpenAIMax
+	ChannelTypeOhMyGPT
+	ChannelTypeCustom
+	ChannelTypeAILS
+	ChannelTypeAIProxy
+	ChannelTypePaLM
+	ChannelTypeAPI2GPT
+	ChannelTypeAIGC2D
+	ChannelTypeAnthropic
+	ChannelTypeBaidu
+	ChannelTypeZhipu
+	ChannelTypeAli
+	ChannelTypeXunfei
+	ChannelType360
+	ChannelTypeOpenRouter
+	ChannelTypeAIProxyLibrary
+	ChannelTypeFastGPT
+	ChannelTypeTencent
+	ChannelTypeGemini
+	ChannelTypeMoonshot
+	ChannelTypeBaichuan
+	ChannelTypeMinimax
+	ChannelTypeMistral
+
+	ChannelTypeDummy
 )
 
 var ChannelBaseURLs = []string{
@@ -91,4 +97,16 @@ var ChannelBaseURLs = []string{
 	"https://fastgpt.run/api/openapi",           // 22
 	"https://hunyuan.cloud.tencent.com",         // 23
 	"https://generativelanguage.googleapis.com", // 24
+	"https://api.moonshot.cn",                   // 25
+	"https://api.baichuan-ai.com",               // 26
+	"https://api.minimax.chat",                  // 27
+	"https://api.mistral.ai",                    // 28
 }
+
+const (
+	ConfigKeyPrefix = "cfg_"
+
+	ConfigKeyAPIVersion = ConfigKeyPrefix + "api_version"
+	ConfigKeyLibraryID  = ConfigKeyPrefix + "library_id"
+	ConfigKeyPlugin     = ConfigKeyPrefix + "plugin"
+)
